@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.practicum.server.StatsController;
 
 
 import java.time.LocalDateTime;
@@ -30,7 +31,7 @@ public class EndpointHit {
     private String ip;
 
     @Column(nullable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = StatsController.pattern)
     private LocalDateTime timestamp;
 
     public EndpointHit(String app, String uri, String ip, LocalDateTime timestamp) {
