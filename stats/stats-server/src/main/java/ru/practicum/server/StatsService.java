@@ -27,16 +27,17 @@ public class StatsService {
         if (start.isAfter(end)) {
             throw new DateTimeException("End date must be after start date.");
         }
+
+        boolean hasUris = uris != null && !uris.isEmpty();
+
         if (unique) {
-            if (uris != null) {
-                return statRepository.findHitsWithUniqueIpWithUris(uris, start, end);
-            }
-            return statRepository.findHitsWithUniqueIpWithoutUris(start, end);
+            return hasUris
+                    ? statRepository.findHitsWithUniqueIpWithUris(uris, start, end)
+                    : statRepository.findHitsWithUniqueIpWithoutUris(start, end);
         } else {
-            if (uris != null) {
-                return statRepository.findAllHitsWithUrls(uris, start, end);
-            }
-            return statRepository.findAllHitsWithoutUrls(start, end);
+            return hasUris
+                    ? statRepository.findAllHitsWithUrls(uris, start, end)
+                    : statRepository.findAllHitsWithoutUrls(start, end);
         }
     }
 }

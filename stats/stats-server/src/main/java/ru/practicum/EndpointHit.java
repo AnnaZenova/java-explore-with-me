@@ -24,14 +24,14 @@ public class EndpointHit {
     @Column(nullable = false)
     private String app;
 
-    @Column(nullable = false)
+    @Column(name = "uri",nullable = false)
     private String uri;
 
     @Column(nullable = false, length = 15)
     private String ip;
 
     @Column(nullable = false)
-    @JsonFormat(pattern = StatsController.pattern)
+    @JsonFormat(pattern = StatsController.DATE_TIME_PATTERN)
     private LocalDateTime timestamp;
 
     public EndpointHit(String app, String uri, String ip, LocalDateTime timestamp) {
