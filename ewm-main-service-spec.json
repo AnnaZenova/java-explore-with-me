@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "description": "Generated server url",
+      "description": "Generated server uri",
       "url": "http://localhost:8080"
     }
   ],
