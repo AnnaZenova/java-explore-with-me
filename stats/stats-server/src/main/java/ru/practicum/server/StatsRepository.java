@@ -12,30 +12,29 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
 
     @Query("SELECT new ru.practicum.ViewStats(h.app, h.uri, COUNT(DISTINCT h.ip)) " +
             "FROM EndpointHit AS h " +
-            "WHERE h.timestamp BETWEEN ?1 AND ?2 " +
+            "WHERE h.timestamp BETWEEN :start AND :end " +
             "GROUP BY h.app, h.uri " +
             "ORDER BY COUNT(DISTINCT h.ip) DESC")
     List<ViewStats> findHitsWithUniqueIpWithoutUris(LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT new ru.practicum.ViewStats(h.app, h.uri, COUNT(DISTINCT h.ip)) " +
             "FROM EndpointHit AS h " +
-            "WHERE h.uri IN (?1) AND h.timestamp BETWEEN ?2 AND ?3 " +
+            "WHERE h.uri IN (:uris) AND h.timestamp BETWEEN :start AND :end " +
             "GROUP BY h.app, h.uri " +
             "ORDER BY COUNT(DISTINCT h.ip) DESC")
     List<ViewStats> findHitsWithUniqueIpWithUris(List<String> uris, LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT new ru.practicum.ViewStats(h.app, h.uri, COUNT(h.uri)) " +
             "FROM EndpointHit AS h " +
-            "WHERE h.timestamp BETWEEN ?1 AND ?2 " +
+            "WHERE h.timestamp BETWEEN :start AND :end " +
             "GROUP BY h.app, h.uri " +
-            "ORDER BY COUNT (h.uri) DESC")
+            "ORDER BY COUNT(h.uri) DESC")
     List<ViewStats> findAllHitsWithoutUrls(LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT new ru.practicum.ViewStats(h.app, h.uri, COUNT(h.uri)) " +
             "FROM EndpointHit AS h " +
-            "WHERE h.uri IN (?1) AND h.timestamp BETWEEN ?2 AND ?3 " +
+            "WHERE h.uri IN (:uris) AND h.timestamp BETWEEN :start AND :end " +
             "GROUP BY h.app, h.uri " +
-            "ORDER BY COUNT (h.uri) DESC")
-    List<ViewStats> findAllHitsWithUrls(List<String> urls, LocalDateTime start, LocalDateTime end);
+            "ORDER BY COUNT(h.uri) DESC")
+    List<ViewStats> findAllHitsWithUrls(List<String> uris, LocalDateTime start, LocalDateTime end);
 }
-

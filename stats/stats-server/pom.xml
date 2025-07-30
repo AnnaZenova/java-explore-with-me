@@ -13,6 +13,10 @@
     <artifactId>stats-server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <properties>
+        <postgresql.version>42.7.3</postgresql.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>ru.practicum</groupId>
@@ -39,7 +43,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
+            <version>${postgresql.version}</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>

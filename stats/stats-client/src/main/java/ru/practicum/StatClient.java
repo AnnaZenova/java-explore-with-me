@@ -11,10 +11,10 @@ import java.util.List;
 
 @Service
 public class StatClient extends BaseClient {
-    public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
     @Value("${client.url}")
     private String serverUrl;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(EndpointHitDto.DATE_TIME_PATTERN);
 
     public ResponseEntity<Object> saveHit(EndpointHitDto hit) {
         return post(serverUrl + "/hit", hit);
