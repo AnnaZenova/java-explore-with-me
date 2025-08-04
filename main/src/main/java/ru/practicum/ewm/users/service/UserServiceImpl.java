@@ -66,6 +66,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User getUserById(Long userId) {
         log.info("Getting user by ID: {}", userId);
         return userRepository.findById(userId)
@@ -75,7 +76,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean existsById(Long userId) {
-        return userRepository.existsById(userId);
+        log.debug("Checking existence of user with ID: {}", userId);
+        boolean exists = userRepository.existsById(userId);
+        if (exists) {
+            log.debug("User with ID: {} exists", userId);
+        } else {
+            log.debug("User with ID: {} does not exist", userId);
+        }
+        return exists;
     }
 }

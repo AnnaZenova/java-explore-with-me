@@ -1,9 +1,8 @@
 package ru.practicum.ewm.events.service;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.experimental.FieldDefaults;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -14,14 +13,17 @@ import ru.practicum.ewm.categories.CategoryMapper;
 import ru.practicum.ewm.categories.service.CategoryService;
 import ru.practicum.ewm.events.EventMapper;
 import ru.practicum.ewm.events.EventRepository;
-import ru.practicum.ewm.events.dto.*;
+import ru.practicum.ewm.events.dto.EventFullDto;
+import ru.practicum.ewm.events.dto.EventShortDto;
+import ru.practicum.ewm.events.dto.EventFullDtoWithViews;
+import ru.practicum.ewm.events.dto.EventShortDtoWithViews;
+import ru.practicum.ewm.events.dto.NewEventDto;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.model.State;
 import ru.practicum.ewm.events.model.StateActionAdmin;
 import ru.practicum.ewm.events.model.StateActionPrivate;
 import ru.practicum.ewm.events.requests.UpdateEventAdminRequest;
 import ru.practicum.ewm.events.requests.UpdateEventUserRequest;
-import ru.practicum.ewm.exceptions.ForbiddenException;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.exceptions.ValidationException;
 
@@ -52,14 +54,13 @@ import static ru.practicum.ewm.events.model.StateActionPrivate.SEND_TO_REVIEW;
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventServiceImpl implements EventService {
-    EventRepository eventRepository;
-    UserService userService;
-    CategoryService categoryService;
-    RequestService requestService;
-    EventStatService eventStatService;
-    EventValidationService validationService;
+    private final  EventRepository eventRepository;
+    private final UserService userService;
+    private final CategoryService categoryService;
+    private final RequestService requestService;
+    private final EventStatService eventStatService;
+    private final EventValidationService validationService;
 
     @Override
     public EventFullDto addEvent(Long userId, NewEventDto newEventDto) {
@@ -93,7 +94,7 @@ public class EventServiceImpl implements EventService {
 
         if (event.getState() == PUBLISHED) {
             log.error("Attempt to update published event ID: {}", eventId);
-            throw new ForbiddenException("Published events can't be updated");
+            throw new DataIntegrityViolationException("Published events can't be updated");
         }
 
         updateEventFields(event, updateEvent);
@@ -109,10 +110,9 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        Event updatedEvent = eventRepository.save(event);
         Long confirmedRequests = requestService.getConfirmedRequestsCountForEvent(eventId);
         log.info("Event ID: {} successfully updated by owner", eventId);
-        return EventMapper.toEventFullDto(updatedEvent, confirmedRequests);
+        return EventMapper.toEventFullDto(event, confirmedRequests);
     }
 
     @Override
@@ -127,10 +127,9 @@ public class EventServiceImpl implements EventService {
 
         updateEventAdminFields(event, updateEvent);
 
-        Event updatedEvent = eventRepository.save(event);
         Long confirmedRequests = requestService.getConfirmedRequestsCountForEvent(eventId);
         log.info("Event ID: {} successfully updated by admin", eventId);
-        return EventMapper.toEventFullDto(updatedEvent, confirmedRequests);
+        return EventMapper.toEventFullDto(event, confirmedRequests);
     }
 
     @Override
@@ -345,20 +344,22 @@ public class EventServiceImpl implements EventService {
     }
 
     private void handleAdminStateAction(Event event, StateActionAdmin stateAction) {
-        if (!event.getState().equals(PENDING) && stateAction.equals(PUBLISH_EVENT)) {
+
+        if (PUBLISH_EVENT.equals(stateAction) && !PENDING.equals(event.getState())) {
             log.error("Attempt to publish non-pending event ID: {}", event.getId());
-            throw new ForbiddenException("Event can't be published because it's not pending");
-        }
-        if (event.getState().equals(PUBLISHED) && stateAction.equals(REJECT_EVENT)) {
-            log.error("Attempt to reject published event ID: {}", event.getId());
-            throw new ForbiddenException("Event can't be rejected because it's already published");
+            throw new DataIntegrityViolationException("Event can't be published because it's not pending");
         }
 
-        if (stateAction.equals(PUBLISH_EVENT)) {
+        if (REJECT_EVENT.equals(stateAction) && PUBLISHED.equals(event.getState())) {
+            log.error("Attempt to reject published event ID: {}", event.getId());
+            throw new DataIntegrityViolationException("Event can't be rejected because it's already published");
+        }
+
+        if (PUBLISH_EVENT.equals(stateAction)) {
             event.setState(PUBLISHED);
             event.setPublishedOn(LocalDateTime.now());
             log.debug("Event ID: {} published by admin", event.getId());
-        } else if (stateAction.equals(REJECT_EVENT)) {
+        } else if (REJECT_EVENT.equals(stateAction)) {
             event.setState(State.CANCELED);
             log.debug("Event ID: {} rejected by admin", event.getId());
         }

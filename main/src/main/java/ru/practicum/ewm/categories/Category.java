@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +28,8 @@ public class Category {
     private Long id;
 
     @Column(nullable = false, unique = true)
+    @NotBlank
+    @Size(max = 50)
     private String name;
 
     public Category(String name) {

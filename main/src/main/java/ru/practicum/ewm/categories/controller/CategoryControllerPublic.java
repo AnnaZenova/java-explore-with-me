@@ -6,7 +6,12 @@ import ru.practicum.ewm.categories.dto.CategoryDto;
 import ru.practicum.ewm.categories.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -25,18 +30,18 @@ public class CategoryControllerPublic {
     public List<CategoryDto> getCategories(
             @RequestParam(value = "from", defaultValue = "0") @PositiveOrZero Integer from,
             @RequestParam(value = "size", defaultValue = "10") @Positive Integer size) {
-        log.info("Запрос списка категорий: from={}, size={}", from, size);
+        log.info("Requesting categories list: from={}, size={}", from, size);
         List<CategoryDto> categories = categoryService.getCategories(from, size);
-        log.info("Найдено {} категорий", categories.size());
+        log.info("Found {} categories", categories.size());
         return categories;
     }
 
     @GetMapping("/{categoryId}")
     @ResponseStatus(HttpStatus.OK)
     public CategoryDto getCategoryById(@PathVariable Long categoryId) {
-        log.info("Запрос категории по ID={}", categoryId);
+        log.info("Requesting category by ID={}", categoryId);
         CategoryDto category = categoryService.getCategoryById(categoryId);
-        log.info("Найдена категория: {}", category);
+        log.info("Category found: {}", category);
         return category;
     }
 }

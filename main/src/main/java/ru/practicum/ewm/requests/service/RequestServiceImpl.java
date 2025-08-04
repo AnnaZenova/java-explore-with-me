@@ -2,12 +2,12 @@ package ru.practicum.ewm.requests.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.events.service.EventInfoService;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.model.State;
-import ru.practicum.ewm.exceptions.ForbiddenException;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.exceptions.ValidationException;
 import ru.practicum.ewm.requests.RequestMapper;
@@ -45,23 +45,23 @@ public class RequestServiceImpl implements RequestService {
 
         if (requestRepository.existsByRequesterIdAndEventId(userId, eventId)) {
             log.warn("Duplicate request from user ID: {} to event ID: {}", userId, eventId);
-            throw new ForbiddenException("Request is already exist.");
+            throw new DataIntegrityViolationException("Request is already exist.");
         }
 
         if (userId.equals(event.getInitiator().getId())) {
             log.warn("Initiator attempt to request own event. User ID: {}, Event ID: {}", userId, eventId);
-            throw new ForbiddenException("Initiator can't send request to his own event.");
+            throw new DataIntegrityViolationException("Initiator can't send request to his own event.");
         }
 
         if (!event.getState().equals(State.PUBLISHED)) {
             log.warn("Attempt to request unpublished event ID: {}", eventId);
-            throw new ForbiddenException("Participation is possible only in published event.");
+            throw new DataIntegrityViolationException("Participation is possible only in published event.");
         }
 
         if (event.getParticipantLimit() != 0 &&
                 event.getParticipantLimit() <= requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED)) {
             log.warn("Participant limit reached for event ID: {}", eventId);
-            throw new ForbiddenException("Participant limit has been reached.");
+            throw new DataIntegrityViolationException("Participant limit has been reached.");
         }
 
         ParticipationRequest request = new ParticipationRequest();
@@ -91,7 +91,7 @@ public class RequestServiceImpl implements RequestService {
         long confirmedRequests = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
         if (event.getParticipantLimit() > 0 && event.getParticipantLimit() <= confirmedRequests) {
             log.warn("Participant limit reached for event ID: {}", eventId);
-            throw new ForbiddenException("The participant limit has been reached.");
+            throw new DataIntegrityViolationException("The participant limit has been reached.");
         }
 
         List<ParticipationRequest> requests = requestRepository.findAllByEventIdAndIdInAndStatus(eventId,
@@ -121,14 +121,14 @@ public class RequestServiceImpl implements RequestService {
         return new EventRequestStatusUpdateResult(confirmed, rejected);
     }
 
+
     @Override
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         log.info("Canceling request ID: {} by user ID: {}", requestId, userId);
         ParticipationRequest request = requestRepository.findByIdAndRequesterId(requestId, userId);
         request.setStatus(RequestStatus.CANCELED);
-        ParticipationRequest canceledRequest = requestRepository.save(request);
         log.info("Request ID: {} canceled successfully", requestId);
-        return RequestMapper.toParticipationRequestDto(canceledRequest);
+        return RequestMapper.toParticipationRequestDto(request);
     }
 
     @Override

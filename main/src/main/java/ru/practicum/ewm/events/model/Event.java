@@ -1,9 +1,9 @@
 package ru.practicum.ewm.events.model;
 
+
 import lombok.Builder;
 import ru.practicum.ewm.categories.Category;
 import ru.practicum.ewm.locations.Location;
-import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.users.User;
 
 import jakarta.persistence.Table;
@@ -18,12 +18,14 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
-import lombok.AccessLevel;
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @Builder
 @Entity
@@ -33,51 +35,61 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "events")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Event {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column(nullable = false, length = 2000)
-    String annotation;
+    @NotBlank
+    private String annotation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
+    @NotNull
     @JoinColumn(name = "category_id", nullable = false)
-    Category category;
+    private Category category;
 
     @Column(name = "created_on", nullable = false, columnDefinition = "TIMESTAMP")
-    LocalDateTime createdOn;
+    @NotNull
+    private LocalDateTime createdOn;
 
     @Column(nullable = false, length = 7000)
-    String description;
+    @Size(min = 20, max = 7000)
+    @NotBlank
+    private String description;
 
     @Column(name = "event_date", nullable = false)
-    LocalDateTime eventDate;
+    @NotNull
+    private LocalDateTime eventDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "initiator_id", nullable = false)
-    User initiator;
+    @NotNull
+    private User initiator;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "location_id", nullable = false)
-    Location location;
+    @NotNull
+    private Location location;
 
-    Boolean paid;
+    private Boolean paid;
 
     @Column(name = "participant_limit")
-    Integer participantLimit;
+    @PositiveOrZero
+    private  Integer participantLimit;
 
     @Column(name = "published_on")
-    LocalDateTime publishedOn;
+    private  LocalDateTime publishedOn;
 
     @Column(name = "request_moderation")
-    Boolean requestModeration;
+    private Boolean requestModeration;
 
     @Enumerated(EnumType.STRING)
-    State state;
+    private  State state;
 
     @Column(nullable = false, length = 120)
-    String title;
+    @NotBlank
+    @Size(min = 3, max = 120)
+    private  String title;
 }

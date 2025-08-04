@@ -25,52 +25,52 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto addCategory(NewCategoryDto newCategoryDto) {
-        log.info("Добавление новой категории: {}", newCategoryDto);
+        log.info("Adding new category: {}", newCategoryDto);
         CategoryDto savedCategory = CategoryMapper.toCategoryDto(
                 categoryRepository.save(CategoryMapper.toCategory(newCategoryDto))
         );
-        log.info("Категория добавлена: {}", savedCategory);
+        log.info("Category added: {}", savedCategory);
         return savedCategory;
     }
 
     @Override
     public CategoryDto updateCategory(Long categoryId, CategoryDto categoryDto) {
-        log.info("Обновление категории ID={}, данные: {}", categoryId, categoryDto);
+        log.info("Updating category ID={}, data: {}", categoryId, categoryDto);
         Category category = getCategory(categoryId);
         category.setName(categoryDto.getName());
-        CategoryDto updatedCategory = CategoryMapper.toCategoryDto(categoryRepository.save(category));
-        log.info("Категория обновлена: {}", updatedCategory);
+        CategoryDto updatedCategory = CategoryMapper.toCategoryDto(category);
+        log.info("Category updated: {}", updatedCategory);
         return updatedCategory;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CategoryDto> getCategories(Integer from, Integer size) {
-        log.info("Получение категорий (from={}, size={})", from, size);
+        log.info("Getting categories (from={}, size={})", from, size);
         List<CategoryDto> categories = categoryRepository.findAll(PageRequest.of(from / size, size)).stream()
                 .map(CategoryMapper::toCategoryDto)
                 .collect(Collectors.toList());
-        log.info("Найдено {} категорий", categories.size());
+        log.info("Found {} categories", categories.size());
         return categories;
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategoryById(Long categoryId) {
-        log.info("Получение категории по ID={}", categoryId);
+        log.info("Getting category with ID={}", categoryId);
         CategoryDto category = CategoryMapper.toCategoryDto(getCategory(categoryId));
-        log.info("Найдена категория: {}", category);
+        log.info("Category with ID={} successfully found", category);
         return category;
     }
 
     @Override
     public void deleteCategory(Long categoryId) {
-        log.info("Удаление категории ID={}", categoryId);
+        log.info("Deleting category with ID={}", categoryId);
         if (!categoryRepository.existsById(categoryId)) {
             throw new NotFoundException("Category with id=" + categoryId + " was not found");
         }
         categoryRepository.deleteById(categoryId);
-        log.info("Категория ID={} удалена", categoryId);
+        log.info("Category with ID={} successfully deleted", categoryId);
     }
 
     private Category getCategory(Long categoryId) {

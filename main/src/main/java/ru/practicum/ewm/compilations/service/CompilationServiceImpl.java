@@ -70,12 +70,7 @@ public class CompilationServiceImpl implements CompilationService {
 
         if (updateCompilation.getEvents() != null) {
             log.debug("Updating events for compilation ID {}: {}", compId, updateCompilation.getEvents());
-            Set<Event> events = updateCompilation.getEvents().stream().map(id -> {
-                Event event = new Event();
-                event.setId(id);
-                return event;
-            }).collect(Collectors.toSet());
-            compilation.setEvents(events);
+            compilation.setEvents(eventRepository.findAllByIdIn(updateCompilation.getEvents()));
         }
 
         if (updateCompilation.getPinned() != null) {
@@ -89,21 +84,8 @@ public class CompilationServiceImpl implements CompilationService {
             compilation.setTitle(title);
         }
 
-        CompilationDto compilationDto = CompilationMapper.toCompilationDto(compilationRepository.save(compilation));
         log.info("Compilation ID {} successfully updated", compId);
-
-        if (compilation.getEvents() != null) {
-            List<Long> ids = compilation.getEvents().stream().map(Event::getId).collect(Collectors.toList());
-            Map<Long, Long> confirmedRequests = requestRepository.findAllByEventIdInAndStatus(ids, CONFIRMED)
-                    .stream()
-                    .collect(Collectors.toMap(ConfirmedRequests::getEvent, ConfirmedRequests::getCount));
-
-            compilationDto.setEvents(compilation.getEvents().stream()
-                    .map(event -> EventMapper.toEventShortDto(event, confirmedRequests.get(event.getId())))
-                    .collect(Collectors.toList()));
-        }
-
-        return compilationDto;
+        return enrichWithConfirmedRequests(CompilationMapper.toCompilationDto(compilation), compilation.getEvents());
     }
 
     @Override
@@ -175,5 +157,19 @@ public class CompilationServiceImpl implements CompilationService {
             log.error("Compilation not found with ID: {}", compilationId);
             return new NotFoundException("Compilation id=" + compilationId + " not found");
         });
+    }
+
+    private CompilationDto enrichWithConfirmedRequests(CompilationDto dto, Set<Event> events) {
+        if (events != null && !events.isEmpty()) {
+            List<Long> ids = events.stream().map(Event::getId).collect(Collectors.toList());
+            Map<Long, Long> confirmedRequests = requestRepository.findAllByEventIdInAndStatus(ids, CONFIRMED)
+                    .stream()
+                    .collect(Collectors.toMap(ConfirmedRequests::getEvent, ConfirmedRequests::getCount));
+
+            dto.setEvents(events.stream()
+                    .map(event -> EventMapper.toEventShortDto(event, confirmedRequests.get(event.getId())))
+                    .collect(Collectors.toList()));
+        }
+        return dto;
     }
 }

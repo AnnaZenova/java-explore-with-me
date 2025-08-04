@@ -1,7 +1,12 @@
 package ru.practicum.ewm.events.service;
 
-import ru.practicum.ewm.events.dto.*;
+
 import jakarta.servlet.http.HttpServletRequest;
+import ru.practicum.ewm.events.dto.EventFullDto;
+import ru.practicum.ewm.events.dto.EventShortDto;
+import ru.practicum.ewm.events.dto.EventFullDtoWithViews;
+import ru.practicum.ewm.events.dto.EventShortDtoWithViews;
+import ru.practicum.ewm.events.dto.NewEventDto;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.events.requests.UpdateEventAdminRequest;
 import ru.practicum.ewm.events.requests.UpdateEventUserRequest;

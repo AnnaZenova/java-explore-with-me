@@ -4,7 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import ru.practicum.ewm.compilations.dto.CompilationDto;
 import ru.practicum.ewm.compilations.service.CompilationService;
 
@@ -25,19 +30,19 @@ public class CompilationControllerPublic {
     public List<CompilationDto> getCompilations(@RequestParam(required = false) Boolean pinned,
                                                 @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
                                                 @RequestParam(defaultValue = "10") @Positive Integer size) {
-        log.info("Public: Получение списка подборок событий с параметрами: pinned={}, from={}, size={}",
+        log.info("Public: Getting events compilations with parameters: pinned={}, from={}, size={}",
                 pinned, from, size);
         List<CompilationDto> result = compilationService.getCompilations(pinned, from, size);
-        log.info("Public: Возвращено {} подборок событий", result.size());
+        log.info("Public: Returned {} events compilations", result.size());
         return result;
     }
 
     @GetMapping("/{compilationId}")
     @ResponseStatus(value = HttpStatus.OK)
     public CompilationDto getCompilationById(@PathVariable Long compilationId) {
-        log.info("Public: Получение подборки событий по ID: {}", compilationId);
+        log.info("Public: Getting event compilation by ID: {}", compilationId);
         CompilationDto result = compilationService.getCompilationById(compilationId);
-        log.info("Public: Возвращена подборка с ID: {}", compilationId);
+        log.info("Public: Event compilation with ID {} returned", compilationId);
         return result;
     }
 }
