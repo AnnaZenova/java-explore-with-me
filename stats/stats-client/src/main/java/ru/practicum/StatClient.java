@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class StatClient extends BaseClient {
@@ -20,17 +20,24 @@ public class StatClient extends BaseClient {
         return post(serverUrl + "/hit", hit);
     }
 
-    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
-        StringBuilder url = new StringBuilder(serverUrl + "/stats?");
-        url.append("start=").append(start.format(formatter));
-        url.append("&end=").append(end.format(formatter));
+    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end,
+                                           List<String> uris, Boolean unique) {
+        Objects.requireNonNull(start, "Start date cannot be null");
+        Objects.requireNonNull(end, "End date cannot be null");
+
+        StringBuilder url = new StringBuilder(serverUrl)
+                .append("/stats?start=")
+                .append(start.format(formatter))
+                .append("&end=")
+                .append(end.format(formatter));
 
         if (uris != null && !uris.isEmpty()) {
-            for (String uri : uris) {
-                url.append("&uris=").append(uri);
-            }
+            uris.forEach(uri -> url.append("&uris=").append(uri));
         }
-        url.append("&unique=").append(unique);
+
+        if (unique != null) {
+            url.append("&unique=").append(unique);
+        }
 
         return get(url.toString());
     }

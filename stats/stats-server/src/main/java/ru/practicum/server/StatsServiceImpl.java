@@ -21,20 +21,19 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public EndpointHitDto saveHit(EndpointHitDto hit) {
-        log.info("Сохранение hit: {}", hit);
+        log.info("Saving hit: {}", hit);
         EndpointHit endpointHit = statRepository.save(EndpointHitMapper.toEndpointHit(hit));
         EndpointHitDto savedHit = EndpointHitMapper.toEndpointHitDto(endpointHit);
-        log.info("Hit успешно сохранен ");
+        log.info("Hit successfully saved");
         return savedHit;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ViewStats> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
-        log.info("Получение статистики с параметрами: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
-
+        log.info("Getting statistics with parameters: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
         if (start.isAfter(end)) {
-            log.error("Ошибка валидации дат: start {} после end {}", start, end);
+            log.error("Date validation error: start {} is after end {}", start, end);
             throw new DateTimeException("End date must be after start date.");
         }
 
@@ -51,7 +50,7 @@ public class StatsServiceImpl implements StatsService {
                     : statRepository.findAllHitsWithoutUrls(start, end);
         }
 
-        log.info("Возвращено {} записей статистики", result.size());
+        log.info("Returned {} statistics records", result.size());
         return result;
     }
 }

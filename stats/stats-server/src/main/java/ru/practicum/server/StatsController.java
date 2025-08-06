@@ -22,9 +22,9 @@ public class StatsController {
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
     public EndpointHitDto saveHit(@RequestBody @Valid EndpointHitDto hit) {
-        log.info("Получен запрос на сохранение hit: {}", hit);
+        log.info("Received request to save hit: {}", hit);
         EndpointHitDto savedHit = statService.saveHit(hit);
-        log.info("Hit успешно сохранён: {}", savedHit);
+        log.info("Hit successfully saved: {}", savedHit);
         return savedHit;
     }
 
@@ -35,12 +35,12 @@ public class StatsController {
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") Boolean unique) {
 
-        log.info("Получен запрос на получение статистики с параметрами: start={}, end={}, uris={}, unique={}",
+        log.info("Received statistics request with parameters: start={}, end={}, uris={}, unique={}",
                 start, end, uris, unique);
 
         List<ViewStats> stats = statService.getStats(start, end, uris, unique);
 
-        log.info("Возвращена статистика: {} записей", stats.size());
+        log.info("Statistics returned: {} records", stats.size());
         return stats;
     }
 }
