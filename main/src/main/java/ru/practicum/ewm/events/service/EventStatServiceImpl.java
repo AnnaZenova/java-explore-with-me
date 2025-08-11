@@ -8,14 +8,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.StatClient;
 import ru.practicum.EndpointHitDto;
 import ru.practicum.ViewStats;
 import ru.practicum.ewm.events.EventMapper;
 import ru.practicum.ewm.events.dto.EventFullDtoWithViews;
+import ru.practicum.ewm.events.dto.EventShortDtoWithViews;
+import ru.practicum.ewm.events.dto.EventWithStats;
 import ru.practicum.ewm.events.model.Event;
 import ru.practicum.ewm.exceptions.NotFoundException;
 import ru.practicum.ewm.exceptions.ValidationException;
+import ru.practicum.ewm.requests.service.RequestService;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -29,6 +33,7 @@ import java.util.stream.Collectors;
 public class EventStatServiceImpl implements EventStatService {
     private final StatClient statClient;
     private final ObjectMapper objectMapper;
+    private final RequestService requestService;
 
     @Value("${app}")
     private String app;
@@ -138,6 +143,96 @@ public class EventStatServiceImpl implements EventStatService {
         } catch (Exception e) {
             log.error("Failed to save hit for URI: {}", request.getRequestURI(), e);
             throw new RuntimeException("Failed to save hit", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventFullDtoWithViews> getEventsWithStats(List<Event> events) {
+        log.info("Converting {} events to EventFullDtoWithViews", events.size());
+        List<EventFullDtoWithViews> result = getEventsWithViews(events).stream()
+                .map(eventWithViews -> EventMapper.toEventFullDtoWithViews(
+                        eventWithViews.getEvent(),
+                        eventWithViews.getViews(),
+                        eventWithViews.getConfirmedRequests()
+                ))
+                .collect(Collectors.toList());
+        log.info("Successfully converted {} events to full DTOs with stats", result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventShortDtoWithViews> getShortEventsWithStats(List<Event> events) {
+        log.info("Converting {} events to EventShortDtoWithViews", events.size());
+        List<EventShortDtoWithViews> result = getEventsWithViews(events).stream()
+                .map(eventWithViews -> EventMapper.toEventShortDtoWithViews(
+                        eventWithViews.getEvent(),
+                        eventWithViews.getViews(),
+                        eventWithViews.getConfirmedRequests()
+                ))
+                .collect(Collectors.toList());
+        log.info("Successfully converted {} events to short DTOs with stats", result.size());
+        return result;
+    }
+
+    private List<EventWithStats> getEventsWithViews(List<Event> events) {
+        if (events.isEmpty()) {
+            log.info("No events provided for stats collection");
+            return Collections.emptyList();
+        }
+
+        log.info("Collecting stats for {} events", events.size());
+
+        List<String> uris = events.stream()
+                .map(event -> String.format("/events/%s", event.getId()))
+                .collect(Collectors.toList());
+
+        LocalDateTime startDate = events.stream()
+                .map(Event::getCreatedOn)
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.now());
+
+        log.info("Requesting stats from {} to now for {} URIs", startDate, uris.size());
+        ResponseEntity<Object> response = statClient.getStats(
+                startDate,
+                LocalDateTime.now(),
+                uris,
+                true
+        );
+
+        List<Long> eventIds = events.stream().map(Event::getId).collect(Collectors.toList());
+        log.info("Requesting confirmed requests for {} event IDs", eventIds.size());
+        Map<Long, Long> confirmedRequests = requestService.getConfirmedRequestsCountForEvents(eventIds);
+
+        log.info("Combining stats for {} events", events.size());
+        return events.stream()
+                .map(event -> {
+                    Long views = extractViewsFromResponse(response, event.getId());
+                    return new EventWithStats(
+                            event,
+                            views,
+                            confirmedRequests.getOrDefault(event.getId(), 0L)
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Long extractViewsFromResponse(ResponseEntity<Object> response, Long eventId) {
+        try {
+            log.info("Extracting views for event ID {}", eventId);
+            ObjectMapper mapper = new ObjectMapper();
+            List<ViewStats> statsDto = mapper.convertValue(response.getBody(), new TypeReference<>() {});
+            Long views = statsDto.stream()
+                    .filter(stat -> stat.getUri().equals("/events/" + eventId))
+                    .findFirst()
+                    .map(ViewStats::getHits)
+                    .orElse(0L);
+            log.info("Found {} views for event ID {}", views, eventId);
+            return views;
+        } catch (Exception e) {
+            log.error("Error parsing stats response for event {}", eventId, e);
+            return 0L;
         }
     }
 }
